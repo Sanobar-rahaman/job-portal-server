@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config()
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const  app = express()
 const port = process.env.PORT ||5001;
@@ -33,19 +33,45 @@ async function run() {
     await client.connect();
 
     const jobCollection  = client.db('jobDb').collection('alljob')
+    const applyCollection  = client.db('jobDb').collection('apply')
 
     // for add jobs
     app.post('/alljobs',async(req,res)=>{
          const newJobs = req.body 
-        
          const result = await jobCollection.insertOne(newJobs)
          res.send(result)
     })
-    app.get('alljobs',async(req,res)=>{
-        const cursor  = jobCollection.find()
+    app.get('/alljobs',async(req,res)=>{
+        const cursor = jobCollection.find()
         const result = await cursor.toArray()
+        res.send(result);
+      })
+    //   for  specific  job
+    app.get('/job/:job_title',async(req,res)=>{
+        const cursor = jobCollection.find({job_title:req.params.job_title})
+        const result = await cursor.toArray()
+        res.send(result);
+      })
+      //details related api
+      app.get('/detailjob/:id',async(req,res)=>{
+        const id = req.params.id
+        
+        const query  = {_id : new ObjectId(id)}
+        const result = await  jobCollection.findOne(query)
+        res.send(result);
+      })
+    //   apply related api
+    app.post('/applyjob',async(req,res)=>{
+        const newJobs = req.body 
+        const result = await applyCollection.insertOne(newJobs)
         res.send(result)
-    })
+   })
+//    show the applyed job to apply jobs
+   app.get('/applyjob',async(req,res)=>{
+    const cursor = applyCollection.find()
+    const result = await cursor.toArray()
+    res.send(result);
+  })
 
 
     // Send a ping to confirm a successful connection
