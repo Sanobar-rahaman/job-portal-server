@@ -10,9 +10,24 @@ const port = process.env.PORT ||5001;
 
 //middlewere
 app.use(cors({
-    origin: ['http://localhost:5173'],
+    origin: ['http://localhost:5173','https://job-hunting-clint.vercel.app',
+'https://clinquant-profiterole-97510f.netlify.app'
+],
     credentials:true
 }))
+// app.use((req, res, next)=>{
+//     // CORS headers
+//     res.header("Access-Control-Allow-Origin", "https://clinquant-profiterole-97510f.netlify.app"); // restrict it to the required domain
+//     res.header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS");
+//     // Set custom headers for CORS
+//     res.header("Access-Control-Allow-Headers", "Content-type,Accept,X-Custom-Header");
+
+//     if (req.method === "OPTIONS") {
+//         return res.status(200).end();
+//     }
+
+//     return next();
+// })
 app.use(express.json())
 app.use(cookieParser())
 
@@ -52,7 +67,7 @@ const verifyToken = async(req,res,next)=>{
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const jobCollection  = client.db('jobDb').collection('alljob')
     const applyCollection  = client.db('jobDb').collection('apply')
@@ -113,9 +128,23 @@ async function run() {
    })
 //    show the applyed job to apply jobs
    app.get('/applyjob',verifyToken,async(req,res)=>{
-    const cursor = applyCollection.find()
-    const result = await cursor.toArray()
+    // token related work
+    console.log('from   valid token cookise',req.user,req.query.email);
+    if(req.query.email !== req.user.email){
+        return res.status(403).send({message:'forbidden access'})
+    }
+    let query ={};
+        if(req.query?.email){
+            query = {applicant: req.query.email}
+        }
+
+
+    // const cursor = applyCollection.find()
+    // const result = await cursor.toArray()
+    const result = await applyCollection.find(query).toArray()
+    console.log(result);
     res.send(result);
+   
   })
   app.delete('/deletejob/:id',async(req,res)=>{
     const id = req.params.id
@@ -127,8 +156,8 @@ async function run() {
 
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    // await client.db("admin").command({ ping: 1 });
+    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
